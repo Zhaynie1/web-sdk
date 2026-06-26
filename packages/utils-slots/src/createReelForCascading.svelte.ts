@@ -47,11 +47,14 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 		return reelSymbols;
 	};
 
-	const updateSymbols = (value: TRawSymbol[]) =>
-		reelState.symbols.map((reelSymbol, symbolIndex) => {
-			reelSymbol.rawSymbol = value[symbolIndex];
+	const updateSymbols = (value: TRawSymbol[]) => {
+		reelState.symbols.forEach((reelSymbol, symbolIndex) => {
+			const nextSymbol = value[symbolIndex];
+			if (!nextSymbol) return;
+			reelSymbol.rawSymbol = nextSymbol;
 			reelSymbol.symbolState = 'static' as TSymbolState;
 		});
+	};
 
 	// constants
 	const reelLength = reelOptions.initialSymbols.length;
@@ -78,6 +81,7 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 	let onSpinFinishing: () => void = () => {};
 	let noStop = false;
 	let paddingSize = 0;
+	let spinCancelled = false;
 
 	const delaySpinByReelIndex = async () => {
 		await waitForTimeout(reelState.spinOptions().reelFallOutDelay * reelOptions.reelIndex);
@@ -94,41 +98,49 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 	};
 
 	const moveAllSymbolsWith = async (moveSymbol: (reelSymbol: ReelSymbol) => Promise<void>) => {
+		if (spinCancelled) return;
 		await Promise.all(reelState.symbols.map(moveSymbol));
 	};
 
 	const fallOut = async () => {
+		if (spinCancelled) return;
 		reelState.motion = 'fallingOut';
 
 		await moveAllSymbolsWith(async (reelSymbol) => {
+			if (spinCancelled) return;
+
 			const oldSymbolY = reelSymbol.symbolY.current;
 			const newSymbolY = getSymbolY(reelSymbol.symbolIndexOfBoard + reelLength);
 			const distance = newSymbolY - oldSymbolY;
-			const duration = distance / reelState.spinOptions().symbolFallOutSpeed;
+			const duration = Math.max(0, distance / reelState.spinOptions().symbolFallOutSpeed);
 			const delay =
 				reelState.spinOptions().symbolFallOutInterval *
 				(reelLengthInBoard - reelSymbol.symbolIndexOfBoard);
 
 			await waitForTimeout(delay);
+			if (spinCancelled) return;
 			reelSymbol.symbolState = 'spin' as TSymbolState;
 			await reelSymbol.symbolY.set(newSymbolY, { duration });
 		});
 
-		reelState.motion = 'hanging';
+		if (!spinCancelled) reelState.motion = 'hanging';
 	};
 
 	const hanging = async () => {
+		if (spinCancelled) return;
 		updateSymbols(targetSymbols);
 
 		await moveAllSymbolsWith(async (reelSymbol) => {
-			const newSymbolY = getSymbolY(reelSymbol.symbolIndexOfBoard - reelLength + 0.5);
-			const duration = 0;
+			if (spinCancelled) return;
 
-			await reelSymbol.symbolY.set(newSymbolY, { duration });
+			const newSymbolY = getSymbolY(reelSymbol.symbolIndexOfBoard - reelLength + 0.5);
+			await reelSymbol.symbolY.set(newSymbolY, { duration: 0 });
 		});
 	};
 
 	const fallIn = async () => {
+		if (spinCancelled) return;
+
 		const fallInDelayMultiplier = paddingSize / reelLength - 1;
 		const waitToStartFallingIn = async () =>
 			await waitForTimeout(reelState.spinOptions().reelFallInDelay * fallInDelayMultiplier);
@@ -137,15 +149,19 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 		// A: When stop button is clicked(isTurbo) and is noStop is false
 		if (noStop) {
 			await waitToStartFallingIn();
-		} else if (stateBet.isTurbo) {
+		} else if (!stateBet.forceNormalSpinPacing && stateBet.isTurbo) {
 			// skip
 		} else {
 			await interruptible.add(waitToStartFallingIn);
 		}
 
+		if (spinCancelled) return;
+
 		reelState.motion = 'fallingIn';
 
 		await moveAllSymbolsWith(async (reelSymbol) => {
+			if (spinCancelled) return;
+
 			const oldSymbolY = reelSymbol.symbolY.current;
 			const newSymbolY = getSymbolY(reelSymbol.symbolIndexOfBoard);
 			const distance = newSymbolY - oldSymbolY;
@@ -154,13 +170,20 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 				(reelLengthInBoard - reelSymbol.symbolIndexOfBoard);
 			const bounceDistance =
 				reelOptions.symbolHeight * reelState.spinOptions().symbolFallInBounceSizeMulti;
-			const bounceDuration = bounceDistance / reelState.spinOptions().symbolFallInBounceSpeed;
-			const landDuration = (distance - bounceDistance) / reelState.spinOptions().symbolFallInSpeed;
+			const bounceDuration = Math.max(
+				0,
+				bounceDistance / reelState.spinOptions().symbolFallInBounceSpeed,
+			);
+			const landDuration = Math.max(
+				0,
+				(distance - bounceDistance) / reelState.spinOptions().symbolFallInSpeed,
+			);
 
 			await reelSymbol.symbolY.set(newSymbolY - bounceDistance, {
 				duration: landDuration,
 				delay,
 			});
+			if (spinCancelled) return;
 			reelSymbol.symbolState = 'land' as TSymbolState;
 			reelOptions.onSymbolLand({ rawSymbol: reelSymbol.rawSymbol });
 			if (reelSymbol.symbolIndexOfBoard === reelLengthInBoard - 1) {
@@ -172,14 +195,20 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 			});
 		});
 
-		reelState.motion = 'stopped';
+		if (!spinCancelled) reelState.motion = 'stopped';
 	};
 
 	const generalSpin = async () => {
+		if (spinCancelled) return;
+
 		const isHanging = reelState.motion === 'hanging';
 
-		if (!isHanging) await fallOut();
+		if (!isHanging) {
+			await fallOut();
+			if (spinCancelled) return;
+		}
 		await hanging();
+		if (spinCancelled) return;
 		await fallIn();
 	};
 
@@ -202,6 +231,7 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 		onSpinFinishing: () => void;
 		previousPaddingSize: number;
 	}) => {
+		spinCancelled = false;
 		reelState.spinType = prepareToSpinOptions.spinType;
 
 		noStop = prepareToSpinOptions.noStop;
@@ -225,13 +255,20 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 
 	const setSymbolsWithRawSymbols = (value?: TRawSymbol[]) => {
 		reelState.motion = 'stopped';
-		if (value) {
+		if (value && value.length > 0) {
 			updateSymbols(value);
 		}
 	};
 
 	const stop = () => {
+		spinCancelled = true;
 		interruptible.interrupt();
+		reelState.motion = 'stopped';
+		reelState.anticipating = false;
+		reelState.symbols.forEach((reelSymbol) => {
+			void reelSymbol.symbolY.set(getSymbolY(reelSymbol.symbolIndexOfBoard), { duration: 0 });
+			reelSymbol.symbolState = 'static' as TSymbolState;
+		});
 	};
 
 	const readyToSpinEffect = () => {

@@ -45,7 +45,13 @@
 				<Button
 					onclick={() => {
 						stateBonus.selectedBetModeKey = betModeData.mode;
-						eventEmitter.broadcast({ type: 'buyBonusConfirm' });
+						if (betModeData.type === 'buy') {
+							stateBet.activeBetModeKey = betModeData.mode;
+							eventEmitter.broadcast({ type: 'bet' });
+							stateModal.modal = null;
+						} else {
+							eventEmitter.broadcast({ type: 'buyBonusConfirm' });
+						}
 						eventEmitter.broadcast({ type: 'soundPressGeneral' });
 					}}
 					disabled={stateBet.betAmount <= 0 ||
@@ -73,8 +79,10 @@
 		text-align: center;
 		min-height: 4rem;
 		white-space: pre-line;
-		display: inline-flex;
+		display: flex;
 		align-items: center;
+		justify-content: center;
+		width: 100%;
 	}
 
 	.description:empty {

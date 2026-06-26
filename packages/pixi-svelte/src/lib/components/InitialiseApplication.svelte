@@ -13,30 +13,52 @@
 
 	let wrap: HTMLDivElement;
 	let initialised = $state(false);
+	let initError = $state<string | null>(null);
+
+	const showInitError = (message: string) => {
+		initError = message;
+		if (wrap) {
+			wrap.innerHTML = `<p style="margin:0;padding:24px;color:#f4e8ff;font-family:system-ui,sans-serif;text-align:center;max-width:420px;line-height:1.5;">${message}</p>`;
+		}
+	};
 
 	const initialiseApplication = async () => {
 		PIXI.Assets.reset();
 
 		await preloadFont();
-		context.stateApp.pixiApplication = new PIXI.Application<PIXI.Renderer<HTMLCanvasElement>>();
-		await context.stateApp.pixiApplication.init({
+		const initOptions = {
 			autoDensity: true,
 			backgroundAlpha: 0,
 			hello: true,
 			multiView: false,
 			antialias: true,
 			clearBeforeRender: true,
-			preference: 'webgpu',
-			powerPreference: 'high-performance',
+			powerPreference: 'high-performance' as const,
 			resolution: devicePixelRatio.current,
 			resizeTo: window,
-		});
+		};
 
-		wrap.appendChild(context.stateApp.pixiApplication.canvas);
+		const preferences = ['webgl', 'webgpu'] as const;
 
-		// to prevent that you can't scroll the page with touch on the canvas. https://github.com/pixijs/pixijs/issues/4824
-		context.stateApp.pixiApplication.renderer.events.autoPreventDefault = false;
-		context.stateApp.pixiApplication.renderer.canvas.style.touchAction = 'auto';
+		for (const preference of preferences) {
+			const application = new PIXI.Application<PIXI.Renderer<HTMLCanvasElement>>();
+
+			try {
+				await application.init({ ...initOptions, preference });
+				context.stateApp.pixiApplication = application;
+				wrap.appendChild(application.canvas);
+
+				// to prevent that you can't scroll the page with touch on the canvas. https://github.com/pixijs/pixijs/issues/4824
+				application.renderer.events.autoPreventDefault = false;
+				application.renderer.canvas.style.touchAction = 'auto';
+				return;
+			} catch (error) {
+				console.warn(`${preference.toUpperCase()} init failed`, error);
+				application.destroy(true);
+			}
+		}
+
+		throw new Error('Graphics failed to start (WebGL and WebGPU unavailable).');
 	};
 
 	onMount(async () => {
@@ -45,6 +67,9 @@
 			initialised = true;
 		} catch (error) {
 			console.error(error);
+			showInitError(
+				'Could not start the game renderer. Try a hard refresh (Ctrl+Shift+R) or another browser.',
+			);
 		}
 	});
 

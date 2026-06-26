@@ -29,7 +29,10 @@ export function createEnhanceBoardSpin<TReel extends Reel<any, any>>({
 		if (stateSlots.isPreSpinning) {
 			await Promise.all(
 				board.map(async (reel) => {
-					await waitForResolve((resolve) => (reel.reelState.readyToSpin = resolve));
+					await waitForResolve((resolve) => {
+						reel.reelState.readyToSpin = resolve;
+						if (reel.reelState.motion === 'hanging') resolve();
+					});
 				}),
 			);
 		}

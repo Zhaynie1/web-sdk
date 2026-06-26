@@ -2,7 +2,17 @@ export const LEVEL_PARTICLE_COIN_MAP = {
 	zero: null,
 	standard: null,
 	small: null,
-	nice: null,
+	nice: {
+		speedOption: {
+			list: [
+				{ value: 650, time: 0 },
+				{ value: 700, time: 0 },
+			],
+		},
+		frequency: 0.18,
+		emitterLifetime: -1,
+		spawnOption: { type: 'rect', spawnRect: { x: -150, y: 0, w: 300, h: 0 } },
+	},
 	substantial: {
 		speedOption: {
 			list: [
@@ -74,7 +84,17 @@ export const LEVEL_PARTICLE_COIN_MAP = {
 export const LEVEL_PARTICLE_COIN_MAP_BURST = {
 	standard: null,
 	small: null,
-	nice: null,
+	nice: {
+		speedOption: {
+			list: [
+				{ value: 650, time: 0 },
+				{ value: 700, time: 0 },
+			],
+		},
+		frequency: 0.18,
+		emitterLifetime: -1,
+		spawnOption: { type: 'rect', spawnRect: { x: -150, y: 0, w: 300, h: 0 } },
+	},
 	substantial: {
 		speedOption: {
 			list: [

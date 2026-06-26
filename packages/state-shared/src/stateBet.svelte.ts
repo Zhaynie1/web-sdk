@@ -19,6 +19,8 @@ export const stateBet = $state({
 	autoSpinsSingleWinLimitAmount: Infinity,
 	isSpaceHold: false,
 	isTurbo: false,
+	/** True when turbo should play the current reveal at normal speed (win lookahead). */
+	forceNormalSpinPacing: false,
 });
 
 const correctBetAmount = (value: number) => {
@@ -54,10 +56,12 @@ const activeBetMode = () => stateMeta.betModeMeta?.[stateBet.activeBetModeKey.to
 	?? null;
 const isContinuousBet = () => stateBet.autoSpinsCounter > 1 || stateBet.isSpaceHold;
 const timeScale = () => (stateBet.isTurbo ? 2 : 1);
-const betCostMultiplier = () =>
-	stateBetDerived.activeBetMode().type === 'activate'
-		? stateBetDerived.activeBetMode().costMultiplier
-		: 1;
+const betCostMultiplier = () => {
+	const mode = stateBetDerived.activeBetMode();
+	if (!mode) return 1;
+	if (mode.type === 'activate' || mode.type === 'buy') return mode.costMultiplier;
+	return 1;
+};
 const betCost = () => stateBet.betAmount * betCostMultiplier();
 const isBetCostAvailable = () => betCost() > 0 && betCost() <= stateBet.balanceAmount;
 const hasAutoBetCounter = () => stateBet.autoSpinsCounter !== 0;
