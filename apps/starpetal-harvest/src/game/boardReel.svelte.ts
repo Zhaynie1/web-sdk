@@ -56,17 +56,30 @@ export function createBoardReel<TRawSymbol extends object, TSymbolState extends 
 
 	const isStale = (generation: number) => generation !== spinGeneration;
 
-	const waitUntilStale = (generation: number) =>
-		new Promise<void>((resolve) => {
-			const tick = () => {
-				if (isStale(generation)) {
-					resolve();
-					return;
-				}
-				requestAnimationFrame(tick);
-			};
-			tick();
+	// Resolve pending stale-waiters when the generation actually advances, rather
+	// than polling every frame with requestAnimationFrame. The old rAF approach
+	// leaked a perpetual loop per call: a Promise.race never cancels its losing
+	// arm, so every waitUntilStale whose animation won the race kept ticking
+	// forever — hundreds piled up per spin and starved the frame loop.
+	let staleWaiters: Array<{ generation: number; resolve: () => void }> = [];
+
+	const notifyStale = () => {
+		if (staleWaiters.length === 0) return;
+		staleWaiters = staleWaiters.filter((waiter) => {
+			if (isStale(waiter.generation)) {
+				waiter.resolve();
+				return false;
+			}
+			return true;
 		});
+	};
+
+	const waitUntilStale = (generation: number) =>
+		isStale(generation)
+			? Promise.resolve()
+			: new Promise<void>((resolve) => {
+					staleWaiters.push({ generation, resolve });
+				});
 
 	const moveSymbolY = async (
 		generation: number,
@@ -91,6 +104,7 @@ export function createBoardReel<TRawSymbol extends object, TSymbolState extends 
 
 	const abort = () => {
 		spinGeneration++;
+		notifyStale();
 		reelState.motion = 'stopped';
 		reelState.anticipating = false;
 		reelState.symbols.forEach((reelSymbol) => {
