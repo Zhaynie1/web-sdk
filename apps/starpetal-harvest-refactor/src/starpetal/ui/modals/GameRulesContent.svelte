@@ -25,7 +25,11 @@
 		flex-direction: column;
 		gap: 1.1rem;
 		width: min(100%, 720px);
-		padding: 0.25rem 0.5rem 0.75rem;
+		/* Scroll the whole info page within the modal when it overflows the viewport. */
+		max-height: 70vh;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.25rem 0.75rem 0.75rem;
 		color: #f4f0ff;
 	}
 

@@ -8,9 +8,9 @@
 
 <script lang="ts">
 	import { Container, Graphics, Text } from 'pixi-svelte';
-	import { ResponsiveBitmapText } from 'components-pixi';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 
+	import SilverText from '$starpetal/ui/SilverText.svelte';
 	import TumbleWinAmountWrap from './TumbleWinAmountWrap.svelte';
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE } from '../game/constants';
@@ -23,10 +23,12 @@
 	const context = getContext();
 
 	// Footprint roughly matches the old sample frame so it sits over the reels cleanly.
-	const PANEL_W = SYMBOL_SIZE * 2.7;
+	const PANEL_W = SYMBOL_SIZE * 2.5;
 	const PANEL_H = SYMBOL_SIZE * 1.0;
-	const TITLE_SIZE = PANEL_H * 0.2;
-	const AMOUNT_SIZE = PANEL_H * 0.34;
+	const TITLE_SIZE = PANEL_H * 0.22;
+	const AMOUNT_SIZE = PANEL_H * 0.26;
+	// Crisp title text when the UI scales up on high-DPI / 4k displays.
+	const TEXT_RESOLUTION = 3;
 
 	const displayAmount = createRafTween(0);
 	let show = $state(false);
@@ -51,6 +53,7 @@
 		<Graphics draw={(g) => drawVineWinPanel(g, PANEL_W, PANEL_H, { compact: true, glow: true })} />
 		<Text
 			anchor={0.5}
+			resolution={TEXT_RESOLUTION}
 			y={-PANEL_H * 0.26}
 			text="TUMBLE WIN"
 			style={{
@@ -63,12 +66,12 @@
 				letterSpacing: 1,
 			}}
 		/>
-		<ResponsiveBitmapText
+		<SilverText
 			anchor={0.5}
-			y={PANEL_H * 0.16}
+			y={PANEL_H * 0.1}
 			maxWidth={PANEL_W * 0.8}
+			targetFontSize={AMOUNT_SIZE}
 			text={bookEventAmountToCurrencyString(displayAmount.current)}
-			style={{ fontFamily: 'silver', fontSize: AMOUNT_SIZE, align: 'center' }}
 		/>
 	</Container>
 </TumbleWinAmountWrap>

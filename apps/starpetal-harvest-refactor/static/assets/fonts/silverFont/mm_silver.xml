@@ -15,7 +15,7 @@
     <char id="40" x="1125" y="0" width="63" height="182" xoffset="0" yoffset="0" xadvance="63" yadvance="182"/>
     <char id="41" x="1350" y="0" width="64" height="181" xoffset="0" yoffset="0" xadvance="64" yadvance="181"/>
     <char id="43" x="1575" y="0" width="108" height="97" xoffset="0" yoffset="0" xadvance="108" yadvance="97"/>
-    <char id="44" x="1800" y="0" width="50" height="72" xoffset="0" yoffset="0" xadvance="50" yadvance="72"/>
+    <char id="44" x="1800" y="0" width="50" height="72" xoffset="0" yoffset="92" xadvance="50" yadvance="72"/>
     <char id="45" x="0" y="233" width="70" height="53" xoffset="0" yoffset="0" xadvance="70" yadvance="53"/>
     <char id="48" x="225" y="233" width="90" height="164" xoffset="0" yoffset="0" xadvance="90" yadvance="164"/>
     <char id="49" x="450" y="233" width="72" height="166" xoffset="0" yoffset="0" xadvance="72" yadvance="166"/>
@@ -56,7 +56,7 @@
     <char id="78" x="225" y="1165" width="107" height="168" xoffset="0" yoffset="0" xadvance="107" yadvance="168"/>
     <char id="79" x="450" y="1165" width="94" height="168" xoffset="0" yoffset="0" xadvance="94" yadvance="168"/>
     <char id="80" x="675" y="1165" width="97" height="168" xoffset="0" yoffset="0" xadvance="97" yadvance="168"/>
-    <char id="46" x="900" y="1165" width="46" height="50" xoffset="0" yoffset="0" xadvance="46" yadvance="50"/>
+    <char id="46" x="900" y="1165" width="46" height="50" xoffset="0" yoffset="114" xadvance="46" yadvance="50"/>
     <char id="8369" x="1125" y="1165" width="191" height="190" xoffset="0" yoffset="0" xadvance="191" yadvance="190"/>
     <char id="81" x="1350" y="1165" width="103" height="175" xoffset="0" yoffset="0" xadvance="103" yadvance="175"/>
     <char id="QUESTIO78" x="1575" y="1165" width="88" height="166" xoffset="0" yoffset="0" xadvance="88" yadvance="166"/>

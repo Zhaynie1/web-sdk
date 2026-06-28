@@ -24,7 +24,7 @@
 	import BoardContainer from '$components/BoardContainer.svelte';
 	import MultiplierBoardBase from './MultiplierBoardBase.svelte';
 
-	const MULTIPLIER_WIN_TIMEOUT_MS = 2000;
+	const MULTIPLIER_WIN_TIMEOUT_MS = 350;
 
 	const context = getContext();
 

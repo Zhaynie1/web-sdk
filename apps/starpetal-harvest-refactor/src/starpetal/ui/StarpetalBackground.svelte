@@ -3,14 +3,16 @@
 	import { stateSound, stateSoundDerived } from 'state-shared';
 
 	import { stateGame } from '$game/stateGame.svelte';
+import { assetUrl } from '../config/assetUrl';
 
 	// Grove video background — a DOM layer behind the transparent Pixi canvas. Two
 	// <video> copies crossfade near loop-end to hide the seam; a tint overlay marks
 	// free spins. A subtle grove/bonus ambience loop (Web Audio, gap-crossfaded)
 	// layers under the engine music and follows gameType.
-	const VIDEO_SRC = '/starpetal/video/starpetal_grove_bg.mp4';
-	const BASE_AMBIENCE_SRC = '/starpetal/audio/starpetal_grove_ambience.m4a';
-	const BONUS_AMBIENCE_SRC = '/starpetal/audio/starpetal_bonus_ambience.m4a';
+	const VIDEO_SRC = assetUrl('starpetal/video/starpetal_grove_bg.mp4');
+	const BASE_AMBIENCE_SRC = assetUrl('starpetal/audio/starpetal_grove_ambience.m4a');
+	// Bonus uses the grove ambience too — the old bonus track was off-theme (country).
+	const BONUS_AMBIENCE_SRC = assetUrl('starpetal/audio/starpetal_grove_ambience.m4a');
 	const CROSSFADE_SEC = 1.4;
 	/** Overlap each loop iteration to hide file gaps / loop-point clicks. */
 	const AMBIENCE_LOOP_CROSSFADE_SEC = 1.2;

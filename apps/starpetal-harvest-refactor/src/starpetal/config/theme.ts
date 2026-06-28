@@ -22,14 +22,15 @@ export const THEME = {
 	silverStroke: 0x2a3448,
 } as const;
 
+// Match the paytable art ranking (highest→lowest): H1 white flower … L3 leaf.
 export const SYMBOL_LABELS: Record<string, string> = {
-	H1: 'Starpetal',
-	H2: 'Cosmic Wasp',
-	H3: 'Lunar Fox',
-	H4: 'Aurora Butterfly',
-	L1: 'Cosmic Dewdrop',
-	L2: 'Starfall Leaf',
-	L3: 'Grove Bloom',
+	H1: 'Grove Bloom',
+	H2: 'Starpetal',
+	H3: 'Cosmic Wasp',
+	H4: 'Lunar Fox',
+	L1: 'Aurora Butterfly',
+	L2: 'Cosmic Dewdrop',
+	L3: 'Starfall Leaf',
 	S: 'Falling Star',
 };
 

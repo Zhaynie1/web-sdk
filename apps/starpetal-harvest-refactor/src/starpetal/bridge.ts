@@ -22,6 +22,7 @@
  */
 import { starpetalAssets } from './config/assets';
 import { SYMBOL_INFO_MAP } from './config/symbols';
+import { getStarpetalBetModeMeta } from './config/betModeMeta';
 import { isLocalPlayRoute, runDemoBook, runDemoAutoplay, initLocalDemoState } from './localPlay/localDemo';
 
 /* ── data the engine pulls ──────────────────────────────────────────── */
@@ -31,6 +32,10 @@ export const assets = starpetalAssets;
 
 /** game/constants.ts — replaces the engine's SYMBOL_INFO_MAP. */
 export const symbolMap = SYMBOL_INFO_MAP;
+
+/** game/context.ts — replaces the engine's DEFAULT_BET_MODE_META so the buy-bonus
+ *  menu lists the starpetal modes (base + three buys). Call-time for social copy. */
+export const getBetModeMeta = getStarpetalBetModeMeta;
 
 /* ── behaviour the engine calls (call-time) ─────────────────────────── */
 

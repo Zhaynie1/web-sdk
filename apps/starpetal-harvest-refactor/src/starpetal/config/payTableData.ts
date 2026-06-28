@@ -1,4 +1,5 @@
 import { isSocialMode, socialLabels } from './socialWording';
+import { assetUrl } from './assetUrl';
 
 /** Reference bet the payout ladder is expressed at. */
 const MIN_BET = 0.2;
@@ -23,15 +24,15 @@ export type PayTableScatterSymbol = {
 
 // Symbol art served from static/starpetal/symbols (site-root URLs).
 const SYMBOL_IMAGES: Record<string, string> = {
-	H1: '/starpetal/symbols/l3_grove_bloom.png',
-	H2: '/starpetal/symbols/h1_starpetal.png',
-	H3: '/starpetal/symbols/h2_cosmic_wasp.png',
-	H4: '/starpetal/symbols/h3_lunar_fox.png',
-	L1: '/starpetal/symbols/h4_aurora_butterfly.png',
-	L2: '/starpetal/symbols/l1_dewdrop.png',
-	L3: '/starpetal/symbols/l2_starfall_leaf.png',
-	S: '/starpetal/symbols/s_falling_star.png',
-	W: '/starpetal/symbols/w_glowing_vine_wild.png',
+	H1: assetUrl('starpetal/symbols/l3_grove_bloom.png'),
+	H2: assetUrl('starpetal/symbols/h1_starpetal.png'),
+	H3: assetUrl('starpetal/symbols/h2_cosmic_wasp.png'),
+	H4: assetUrl('starpetal/symbols/h3_lunar_fox.png'),
+	L1: assetUrl('starpetal/symbols/h4_aurora_butterfly.png'),
+	L2: assetUrl('starpetal/symbols/l1_dewdrop.png'),
+	L3: assetUrl('starpetal/symbols/l2_starfall_leaf.png'),
+	S: assetUrl('starpetal/symbols/s_falling_star.png'),
+	W: assetUrl('starpetal/symbols/w_glowing_vine_wild.png'),
 };
 
 const PAYING_SYMBOL_ORDER = ['H1', 'H2', 'H3', 'H4', 'L1', 'L2', 'L3'] as const;

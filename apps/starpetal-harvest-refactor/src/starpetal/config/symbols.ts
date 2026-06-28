@@ -34,16 +34,20 @@ const states = (assetKey: string, w = 1, h = 1) => ({
 
 // Cluster books use 5 highs (H1–H5) + 4 lows (L1–L4); starpetal art has 4 highs
 // + 3 lows, so H5 and L4 reuse a tier-mate's art until real starpetal books land.
+// Art per pay-key must match the paytable (payTableData.ts), so each symbol on the reels
+// pays the value the paytable shows for it. Ranked highest→lowest:
+// H1 White Flower (grove bloom), H2 Gold Star (starpetal), H3 Firefly (cosmic wasp),
+// H4 Fox (lunar fox), L1 Butterfly (aurora), L2 Raindrop (dewdrop), L3 Leaf (starfall).
 export const SYMBOL_INFO_MAP = {
-	H1: states('sp_h1'),
-	H2: states('sp_h2'),
-	H3: states('sp_h3'),
-	H4: states('sp_h4'),
-	H5: states('sp_h1'),
-	L1: states('sp_l1'),
-	L2: states('sp_l2'),
-	L3: states('sp_l3'),
-	L4: states('sp_l1'),
+	H1: states('sp_l3'),
+	H2: states('sp_h1'),
+	H3: states('sp_h2'),
+	H4: states('sp_h3'),
+	H5: states('sp_l3'), // unused by current books
+	L1: states('sp_h4'),
+	L2: states('sp_l1'),
+	L3: states('sp_l2'),
+	L4: states('sp_l2'), // unused by current books
 	W: states('sp_w', 1.12, 1.12),
 	S: states('sp_s', 1.24, 1.24),
 	// Multiplier dewdrops — getSymbolKey returns `M_<value>` for { name:'M', multiplier }.

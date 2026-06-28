@@ -13,13 +13,14 @@
 	import { onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
 
-	import { BitmapText } from 'pixi-svelte';
+	import { Container, Graphics } from 'pixi-svelte';
 	import { stateBetDerived } from 'state-shared';
 	import { SECOND } from 'constants-shared/time';
 	import { FadeContainer } from 'components-pixi';
 	import { waitForTimeout } from 'utils-shared/wait';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 
+	import SilverText from '$starpetal/ui/SilverText.svelte';
 	import { SYMBOL_SIZE } from '../game/constants';
 	import { getContext } from '../game/context';
 
@@ -33,25 +34,41 @@
 
 	let showMultiplier = $state(props.win.mult > 1);
 
-	// update showMultiplier
+	// Cluster highlight + pop timing — sped up (was a 1s multiplier hold + 2s float).
+	const timeScale = () => stateBetDerived.timeScale();
+	const MULTIPLIER_HOLD_MS = SECOND * 0.4;
+	const FLOAT_MS = SECOND * 0.8;
+	const POP_MS = 130;
+
+	// Soft aura behind the glossy number — a dark core for legibility over the busy
+	// board plus a starlight/violet bloom, matching the multiplier-gem language.
+	const drawAura = (g: import('pixi.js').Graphics) => {
+		g.clear();
+		g.ellipse(0, 0, SYMBOL_SIZE * 0.62, SYMBOL_SIZE * 0.32);
+		g.fill({ color: 0x1a0f33, alpha: 0.4 });
+		g.ellipse(0, 0, SYMBOL_SIZE * 0.78, SYMBOL_SIZE * 0.42);
+		g.fill({ color: 0xc9b3ff, alpha: 0.16 });
+	};
+
+	// switch "win × mult" → combined result
 	onMount(async () => {
-		await waitForTimeout(SECOND / stateBetDerived.timeScale());
+		await waitForTimeout(MULTIPLIER_HOLD_MS / timeScale());
 		showMultiplier = false;
 	});
 
-	// update scale
+	// combine pop, timed to coincide with the result switch
 	onMount(async () => {
 		if (showMultiplier) {
-			await waitForTimeout(SECOND);
+			await waitForTimeout(MULTIPLIER_HOLD_MS / timeScale());
 			context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_combine_a' });
-			await scale.set(0.1, { duration: 200 / stateBetDerived.timeScale() });
-			await scale.set(1, { duration: 200 / stateBetDerived.timeScale() });
+			await scale.set(0.1, { duration: POP_MS / timeScale() });
+			await scale.set(1, { duration: POP_MS / timeScale() });
 		}
 	});
 
-	// update y
+	// float up then fade out
 	onMount(async () => {
-		await y.set(-SYMBOL_SIZE, { duration: (SECOND * 2) / stateBetDerived.timeScale() });
+		await y.set(-SYMBOL_SIZE, { duration: FLOAT_MS / timeScale() });
 		show = false;
 	});
 </script>
@@ -62,17 +79,19 @@
 		if (!show) props.win.oncomplete();
 	}}
 >
-	<BitmapText
+	<Container
 		x={SYMBOL_SIZE * (props.win.reel + 0.5)}
 		y={SYMBOL_SIZE * (props.win.row - 0.5) + y.current}
 		scale={scale.current}
-		text={showMultiplier
-			? `${bookEventAmountToCurrencyString(props.win.win)} X ${props.win.mult}`
-			: bookEventAmountToCurrencyString(props.win.result)}
-		anchor={0.5}
-		style={{
-			fontFamily: 'gold',
-			fontSize: SYMBOL_SIZE * 0.5,
-		}}
-	/>
+	>
+		<Graphics draw={drawAura} />
+		<SilverText
+			anchor={0.5}
+			maxWidth={SYMBOL_SIZE * 4}
+			targetFontSize={SYMBOL_SIZE * 0.4}
+			text={showMultiplier
+				? `${bookEventAmountToCurrencyString(props.win.win)} X ${props.win.mult}`
+				: bookEventAmountToCurrencyString(props.win.result)}
+		/>
+	</Container>
 </FadeContainer>

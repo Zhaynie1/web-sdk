@@ -2,7 +2,9 @@ import { setContextEventEmitter, getContextEventEmitter } from 'utils-event-emit
 import { setContextXstate, getContextXstate } from 'utils-xstate';
 import { setContextLayout, getContextLayout } from 'utils-layout';
 import { setContextApp, getContextApp } from 'pixi-svelte';
+import { stateMeta } from 'state-shared';
 
+import * as starpetal from '$starpetal/bridge';
 import { eventEmitter, type EmitterEvent } from './eventEmitter';
 import { stateXstate, stateXstateDerived } from './stateXstate';
 import { stateLayout, stateLayoutDerived } from './stateLayout';
@@ -16,6 +18,7 @@ export const setContext = () => {
 	setContextXstate({ stateXstate, stateXstateDerived });
 	setContextLayout({ stateLayout, stateLayoutDerived });
 	setContextApp({ stateApp });
+	stateMeta.betModeMeta = starpetal.getBetModeMeta();
 };
 
 export const getContext = () => ({

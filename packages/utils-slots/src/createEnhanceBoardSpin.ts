@@ -1,5 +1,5 @@
 import { stateBet } from 'state-shared';
-import { waitForResolve } from 'utils-shared/wait';
+import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
 
 import { stateSlots } from './stateSlots.svelte';
 import type { Reel, GetRawSymbolFromReel } from './types';
@@ -29,10 +29,16 @@ export function createEnhanceBoardSpin<TReel extends Reel<any, any>>({
 		if (stateSlots.isPreSpinning) {
 			await Promise.all(
 				board.map(async (reel) => {
-					await waitForResolve((resolve) => {
-						reel.reelState.readyToSpin = resolve;
-						if (reel.reelState.motion === 'hanging') resolve();
-					});
+					await Promise.race([
+						waitForResolve((resolve) => {
+							reel.reelState.readyToSpin = resolve;
+							if (reel.reelState.motion === 'hanging') resolve();
+						}),
+						// Safety: never wait forever for a reel to reach 'hanging'. A stuck
+						// pre-spin would otherwise freeze the next bet entirely (it then just
+						// does a full spin from wherever the reel is).
+						waitForTimeout(2500),
+					]);
 				}),
 			);
 		}

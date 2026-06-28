@@ -257,12 +257,16 @@ const SPIN_OPTIONS_SHARED = {
 
 export const SPIN_OPTIONS_DEFAULT = {
 	...SPIN_OPTIONS_SHARED,
-	symbolFallInSpeed: 3.5,
-	symbolFallInInterval: 30,
+	// Snappier normal spin — tighter reel stagger + faster symbol fall. Overrides the
+	// shared delays here only, so turbo (SPIN_OPTIONS_FAST) is unchanged.
+	reelFallInDelay: 55,
+	reelFallOutDelay: 95,
+	symbolFallInSpeed: 5.5,
+	symbolFallInInterval: 14,
 	symbolFallInBounceSpeed: 0.15,
 	symbolFallInBounceSizeMulti: 0.5,
-	symbolFallOutSpeed: 3.5,
-	symbolFallOutInterval: 20,
+	symbolFallOutSpeed: 5.5,
+	symbolFallOutInterval: 10,
 };
 
 export const SPIN_OPTIONS_FAST = {

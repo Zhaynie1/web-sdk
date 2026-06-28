@@ -11,6 +11,7 @@ export type GroveButtonIcon =
 	| 'autospin'
 	| 'bonusBuy'
 	| 'info'
+	| 'settings'
 	| 'exit';
 
 type IconOpts = {
@@ -182,6 +183,24 @@ const drawInfoIcon = (g: Graphics, s: number, opts: IconOpts) => {
 	g.fill({ color: fill, alpha: opts.disabled ? 0.4 : 1 });
 };
 
+const drawSettingsIcon = (g: Graphics, s: number, opts: IconOpts) => {
+	const fill = iconFill(opts);
+	const teeth = 8;
+	const toothR = 15 * s;
+	const hubR = 9 * s;
+
+	for (let i = 0; i < teeth; i++) {
+		const a = (i / teeth) * Math.PI * 2;
+		g.circle(Math.cos(a) * toothR, Math.sin(a) * toothR, 3.2 * s);
+		g.fill({ color: fill, alpha: opts.disabled ? 0.4 : 1 });
+	}
+
+	g.circle(0, 0, hubR);
+	g.fill({ color: fill, alpha: opts.disabled ? 0.45 : 1 });
+	g.circle(0, 0, 4 * s);
+	g.fill({ color: THEME.bgDeep, alpha: 0.9 });
+};
+
 const drawExitIcon = (g: Graphics, s: number, opts: IconOpts) => {
 	const fill = iconFill(opts);
 	const d = 10 * s;
@@ -227,6 +246,9 @@ export const drawGroveButtonIcon = (
 			break;
 		case 'info':
 			drawInfoIcon(g, s, opts);
+			break;
+		case 'settings':
+			drawSettingsIcon(g, s, opts);
 			break;
 		case 'exit':
 			drawExitIcon(g, s, opts);

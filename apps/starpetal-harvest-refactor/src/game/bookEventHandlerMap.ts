@@ -2,6 +2,7 @@ import _ from 'lodash';
 
 import { recordBookEvent, checkIsMultipleRevealEvents, type BookEventHandlerMap } from 'utils-book';
 import { stateBet } from 'state-shared';
+import { waitForTimeout } from 'utils-shared/wait';
 
 import * as starpetal from '$starpetal/bridge';
 import { bookEventHandlers as starpetalBookEventHandlers } from '$starpetal/features';
@@ -13,17 +14,18 @@ import { stateGame, stateGameDerived } from './stateGame.svelte';
 import type { BookEvent, BookEventOfType, BookEventContext } from './typesBookEvent';
 import type { Position } from './types';
 
+// Safety net for win/tumble presentation steps: if an animation's completion event is
+// ever dropped (most likely on a long, retriggered bonus with many cascades), proceed
+// after this cap instead of hanging the round forever.
+const ANIM_TIMEOUT_MS = 2500;
+const withTimeout = <T>(p: Promise<T>, ms = ANIM_TIMEOUT_MS) =>
+	Promise.race([p, waitForTimeout(ms)]);
+
 const winLevelSoundsPlay = ({ winLevelData }: { winLevelData: WinLevelData }) => {
 	if (winLevelData?.alias === 'max') eventEmitter.broadcastAsync({ type: 'uiHide' });
-	if (winLevelData?.sound?.sfx) {
-		eventEmitter.broadcast({ type: 'soundOnce', name: winLevelData.sound.sfx });
-	}
-	if (winLevelData?.sound?.bgm) {
-		eventEmitter.broadcast({ type: 'soundMusic', name: winLevelData.sound.bgm });
-	}
-	if (winLevelData?.type === 'big') {
-		eventEmitter.broadcast({ type: 'soundLoop', name: 'sfx_bigwin_coinloop' });
-	}
+	// One unified, on-theme win sound for every level — no per-level template jingles,
+	// bgm, or coin loop (those included the off-theme/"country" cues).
+	eventEmitter.broadcast({ type: 'soundWinCelebration' });
 };
 
 const winLevelSoundsStop = () => {
@@ -45,6 +47,53 @@ const animateSymbols = async ({ positions }: { positions: Position[] }) => {
 	});
 };
 
+// --- Starpetal Awakening (super) underlying-multiplier grid ------------------------
+// Simulated client-side so each super bonus starts its 18 × 2x in random cells, then
+// grows a 2x wherever a winning symbol lands and doubles it on each later hit. The hit
+// cells are read from the book's own grid deltas (the book grows exactly the cells the
+// winning symbols cover), so multipliers always bloom where the symbol hit. Purely
+// cosmetic — payouts come from the book unchanged; only the grid display is simulated.
+const SUPER_GRID_ROWS = 7;
+const SUPER_GRID_COLS = 7;
+const SUPER_START_COUNT = 18;
+
+let superGridActive = false;
+let superSimGrid: number[][] | null = null;
+let prevBookGrid: number[][] | null = null;
+
+const makeRandomSuperGrid = () => {
+	const grid = Array.from({ length: SUPER_GRID_ROWS }, () =>
+		Array.from({ length: SUPER_GRID_COLS }, () => 0),
+	);
+	const cells: Array<[number, number]> = [];
+	for (let r = 0; r < SUPER_GRID_ROWS; r += 1)
+		for (let c = 0; c < SUPER_GRID_COLS; c += 1) cells.push([r, c]);
+	for (let i = cells.length - 1; i > 0; i -= 1) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[cells[i], cells[j]] = [cells[j], cells[i]];
+	}
+	for (let k = 0; k < SUPER_START_COUNT && k < cells.length; k += 1) {
+		const [r, c] = cells[k];
+		grid[r][c] = 2;
+	}
+	return grid;
+};
+
+// Mirror the book's per-cell hits onto the simulated grid: any cell whose book value
+// rose since the previous grid was hit this step → empty becomes 2x, otherwise doubles.
+const applyHitsToSuperGrid = (bookGrid: number[][]) => {
+	if (!superSimGrid) return;
+	for (let r = 0; r < bookGrid.length; r += 1) {
+		for (let c = 0; c < bookGrid[r].length; c += 1) {
+			const before = prevBookGrid?.[r]?.[c] ?? 0;
+			if (bookGrid[r][c] > before && superSimGrid[r]) {
+				const current = superSimGrid[r][c] ?? 0;
+				superSimGrid[r][c] = current > 0 ? current * 2 : 2;
+			}
+		}
+	}
+};
+
 const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> = {
 	reveal: async (bookEvent: BookEventOfType<'reveal'>, { bookEvents }: BookEventContext) => {
 		eventEmitter.broadcast({ type: 'tumbleWinAmountReset' });
@@ -61,7 +110,7 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 	},
 	winInfo: async (bookEvent: BookEventOfType<'winInfo'>) => {
 		const promise1 = async () => {
-			eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_winlevel_small' });
+			eventEmitter.broadcast({ type: 'soundClusterHighlight' });
 			await animateSymbols({ positions: _.flatten(bookEvent.wins.map((win) => win.positions)) });
 		};
 
@@ -80,7 +129,7 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 			});
 		};
 
-		await Promise.all([promise1(), promise2()]);
+		await withTimeout(Promise.all([promise1(), promise2()]));
 	},
 	updateTumbleWin: async (bookEvent: BookEventOfType<'updateTumbleWin'>) => {
 		if (bookEvent.amount > 0) {
@@ -96,16 +145,21 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		stateBet.winBookEventAmount = bookEvent.amount;
 	},
 	freeSpinTrigger: async (bookEvent: BookEventOfType<'freeSpinTrigger'>) => {
+		// New super bonus → seed a fresh random 18 × 2x underlying-multiplier layout.
+		// Detect Awakening by its variant, or fall back to its 12-spin award.
+		superGridActive =
+			(bookEvent as { bonusVariant?: string }).bonusVariant === 'awakening' ||
+			bookEvent.totalFs === 12;
+		superSimGrid = superGridActive ? makeRandomSuperGrid() : null;
+		prevBookGrid = null;
 		// animate scatters
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
 		await animateSymbols({ positions: bookEvent.positions });
 		// show free spin intro
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_superfreespin' });
 		await eventEmitter.broadcastAsync({ type: 'uiHide' });
 		await eventEmitter.broadcastAsync({ type: 'transition' });
 		eventEmitter.broadcast({ type: 'freeSpinIntroShow' });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'jng_intro_fs' });
-		eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_freespin' });
+		eventEmitter.broadcast({ type: 'soundBonusEntry' });
 		await eventEmitter.broadcastAsync({
 			type: 'freeSpinIntroUpdate',
 			totalFreeSpins: bookEvent.totalFs,
@@ -133,12 +187,10 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
 		await animateSymbols({ positions: bookEvent.positions });
 		// show free spin intro
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_superfreespin' });
 		await eventEmitter.broadcastAsync({ type: 'uiHide' });
 		await eventEmitter.broadcastAsync({ type: 'transition' });
 		eventEmitter.broadcast({ type: 'freeSpinIntroShow' });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'jng_intro_fs' });
-		eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_freespin' });
+		eventEmitter.broadcast({ type: 'soundBonusEntry' });
 		await eventEmitter.broadcastAsync({
 			type: 'freeSpinIntroUpdate',
 			totalFreeSpins: bookEvent.totalFs,
@@ -185,7 +237,6 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		eventEmitter.broadcast({ type: 'boardFrameGlowHide' });
 		eventEmitter.broadcast({ type: 'globalMultiplierHide' });
 		eventEmitter.broadcast({ type: 'freeSpinOutroShow' });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_youwon_panel' });
 		winLevelSoundsPlay({ winLevelData });
 		await eventEmitter.broadcastAsync({
 			type: 'freeSpinOutroCountUp',
@@ -206,13 +257,15 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		eventEmitter.broadcast({ type: 'boardHide' });
 		eventEmitter.broadcast({ type: 'tumbleBoardShow' });
 		eventEmitter.broadcast({ type: 'tumbleBoardInit', addingBoard: bookEvent.newSymbols });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_explosion_b' });
-		await eventEmitter.broadcastAsync({
-			type: 'tumbleBoardExplode',
-			explodingPositions: bookEvent.explodingSymbols,
-		});
+		eventEmitter.broadcast({ type: 'soundClusterConnect' });
+		await withTimeout(
+			eventEmitter.broadcastAsync({
+				type: 'tumbleBoardExplode',
+				explodingPositions: bookEvent.explodingSymbols,
+			}),
+		);
 		eventEmitter.broadcast({ type: 'tumbleBoardRemoveExploded' });
-		await eventEmitter.broadcastAsync({ type: 'tumbleBoardSlideDown' });
+		await withTimeout(eventEmitter.broadcastAsync({ type: 'tumbleBoardSlideDown' }));
 		eventEmitter.broadcast({
 			type: 'boardSettle',
 			board: stateGameDerived
@@ -226,6 +279,10 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 	setWin: async (bookEvent: BookEventOfType<'setWin'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 
+		// Only pop the win screen for "nice" wins (level 4) and above; smaller wins
+		// just settle into the balance without a celebration screen.
+		if (winLevelData.level < winLevelMap[4].level) return;
+
 		eventEmitter.broadcast({ type: 'winShow' });
 		winLevelSoundsPlay({ winLevelData });
 		await eventEmitter.broadcastAsync({
@@ -238,9 +295,23 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 	},
 	updateGrid: async (bookEvent: BookEventOfType<'updateGrid'>) => {
 		eventEmitter.broadcast({ type: 'multiplierGridShow' });
-		eventEmitter.broadcast({ type: 'multiplierGridUpdate', grid: bookEvent.gridMultipliers });
+		// Super bonus shows the client-simulated grid (random 18 start + grow-on-hit);
+		// every other mode shows the book's grid as-is. Either way a multiplier blooms at
+		// the exact cell a winning symbol hit (the book grows those same cells).
+		let grid = bookEvent.gridMultipliers;
+		if (superGridActive && superSimGrid) {
+			// First grid after the trigger is the book's seed — keep our random layout;
+			// from then on, fold each step's hits into the simulated grid.
+			if (prevBookGrid !== null) applyHitsToSuperGrid(bookEvent.gridMultipliers);
+			prevBookGrid = bookEvent.gridMultipliers;
+			grid = superSimGrid.map((row) => [...row]);
+		}
+		eventEmitter.broadcast({ type: 'multiplierGridUpdate', grid });
 	},
 	finalWin: async (bookEvent: BookEventOfType<'finalWin'>) => {
+		superGridActive = false;
+		superSimGrid = null;
+		prevBookGrid = null;
 		eventEmitter.broadcast({ type: 'multiplierGridClear' });
 		eventEmitter.broadcast({ type: 'multiplierGridHide' });
 		eventEmitter.broadcast({ type: 'globalMultiplierHide' });

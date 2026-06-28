@@ -7,11 +7,9 @@
 </script>
 
 <script lang="ts">
-	import { BitmapText, Container, SpineProvider, SpineTrack } from 'pixi-svelte';
-
 	import BoardContainer from './BoardContainer.svelte';
+	import MultiplierGridTile from './MultiplierGridTile.svelte';
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE } from '../game/constants';
 
 	const context = getContext();
 	const DEFAULT_GRID = [
@@ -33,35 +31,21 @@
 		multiplierGridUpdate: (emitterEvent) => (grid = emitterEvent.grid),
 		multiplierGridClear: () => (grid = DEFAULT_GRID),
 	});
+
+	// Flatten to active cells keyed by board position. Keying lets a tile persist
+	// across grid updates (so it can pulse when its value grows) while newly created
+	// cells mount fresh (so they bloom in where the symbol hit).
+	const cells = $derived(
+		grid
+			.flatMap((reel, col) => reel.map((multiplier, row) => ({ col, row, multiplier })))
+			.filter((cell) => cell.multiplier > 0),
+	);
 </script>
 
 <BoardContainer>
 	{#if show}
-		{#each grid as reel, reelIndex}
-			{#each reel as multiplier, rowIndex}
-				{#if multiplier > 0}
-					<Container x={(reelIndex + 0.5) * SYMBOL_SIZE} y={(rowIndex + 0.5) * SYMBOL_SIZE}>
-						<SpineProvider key="anticipation" width={SYMBOL_SIZE * 0.19}>
-							<SpineTrack trackIndex={0} animationName={'payframe'} loop />
-						</SpineProvider>
-						{#if multiplier > 1}
-							<BitmapText
-								x={-SYMBOL_SIZE * 0.05}
-								anchor={{
-									x: 0.5,
-									y: 0.5,
-								}}
-								text={`${multiplier} X`}
-								style={{
-									fontFamily: 'gold',
-									fontSize: SYMBOL_SIZE * 0.5,
-									letterSpacing: -5,
-								}}
-							/>
-						{/if}
-					</Container>
-				{/if}
-			{/each}
+		{#each cells as cell (`${cell.col},${cell.row}`)}
+			<MultiplierGridTile col={cell.col} row={cell.row} multiplier={cell.multiplier} />
 		{/each}
 	{/if}
 </BoardContainer>

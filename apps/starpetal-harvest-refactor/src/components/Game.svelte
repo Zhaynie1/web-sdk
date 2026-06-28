@@ -24,7 +24,6 @@
 	import ClusterWinAmounts from './ClusterWinAmounts.svelte';
 	import TumbleBoard from './TumbleBoard.svelte';
 	import TumbleWinAmount from './TumbleWinAmount.svelte';
-	import GlobalMultiplier from './GlobalMultiplier.svelte';
 	import FreeSpinCounter from './FreeSpinCounter.svelte';
 	import Transition from './Transition.svelte';
 	import StarpetalWin from '$starpetal/ui/StarpetalWin.svelte';
@@ -34,6 +33,8 @@
 	import StarpetalLayer from '$starpetal/ui/StarpetalLayer.svelte';
 	import VineBoardFrame from '$starpetal/ui/VineBoardFrame.svelte';
 	import StarpetalUI from '$starpetal/ui/StarpetalUI.svelte';
+	import SlamStop from '$starpetal/ui/SlamStop.svelte';
+	import GoonaIntro from '$starpetal/ui/GoonaIntro.svelte';
 	import MultiplierOverlay from '$starpetal/ui/multiplier/MultiplierOverlay.svelte';
 
 	const context = getContext();
@@ -82,7 +83,6 @@
 			<Board />
 			<Anticipations />
 			<TumbleWinAmount />
-			<GlobalMultiplier />
 		</MainContainer>
 
 		<MainContainer>
@@ -94,7 +94,8 @@
 			<MultiplierOverlay />
 		</MainContainer>
 
-		<StarpetalUI />
+		<SlamStop />
+			<StarpetalUI />
 		<StarpetalWin />
 		<StarpetalFreeSpinIntro />
 		{#if ['desktop', 'landscape'].includes(context.stateLayoutDerived.layoutType())}
@@ -111,6 +112,9 @@
 		<GameVersion version="0.0.0" />
 	{/snippet}
 </StarpetalModals>
+
+<!-- Studio intro, plays over everything before the Starpetal loading screen -->
+<GoonaIntro />
 
 <style>
 	/* Stack the canvas above the grove video (z-index 0). */

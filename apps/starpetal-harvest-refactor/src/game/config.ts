@@ -1,14 +1,14 @@
-// PRODUCTION TODO — these are the cluster-example placeholders. Before a live RGS
-// deploy, set the starpetal identity + math here. The original starpetal app used
-// gameName/gameID 'starpetal_harvest', rtp 0.96, max_win 25000, and bet modes for
-// the base game + three bonus buys (harvest 100×, awakening 200×, mystery 1000×).
-// The RGS *connection* is URL-param driven via <Authenticate> and needs no code
-// change; only this identity/math config does.
+// Starpetal Harvest identity + math. The RGS *connection* is URL-param driven via
+// <Authenticate> and needs no code change; this is the game identity and the bet
+// modes the buy-bonus menu enumerates (base + three bonus buys). The symbol/
+// paytable/paddingReels below remain the cluster-example placeholders until the
+// real starpetal math books land; local play sources its books from
+// static/starpetal/data instead.
 export default {
 	providerName: 'sample_provider',
-	gameName: 'sample_lines',
-	gameID: '0_0_cluster',
-	rtp: 0.97,
+	gameName: 'starpetal_harvest',
+	gameID: 'starpetal_harvest',
+	rtp: 0.96,
 	numReels: 7,
 	numRows: [7, 7, 7, 7, 7, 7, 7],
 	betModes: {
@@ -16,15 +16,34 @@ export default {
 			cost: 1.0,
 			feature: true,
 			buyBonus: false,
-			rtp: 0.97,
-			max_win: 5000.0,
+			rtp: 0.96,
+			max_win: 25000,
+			description: 'Starpetal Harvest base game',
 		},
 		bonus: {
-			cost: 500,
-			feature: true,
-			buyBonus: false,
-			rtp: 0.97,
-			max_win: 5000.0,
+			cost: 100.0,
+			feature: false,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 25000,
+			description: 'Starpetal Harvest bonus — 10 free spins',
+		},
+		starpetal_awakening: {
+			cost: 200.0,
+			feature: false,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 25000,
+			description: 'Starpetal Awakening Super Bonus — underlying tile multipliers',
+		},
+		starpetal_mystery: {
+			cost: 1000.0,
+			feature: false,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 25000,
+			description:
+				'Mystery Buy — Starpetal Harvest, Starpetal Awakening, or rare Starpetal Mystery (15 spins, 256× hit)',
 		},
 	},
 	symbols: {

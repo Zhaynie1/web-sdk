@@ -10,25 +10,25 @@
 	import ModalAutoSpin from 'components-ui-html/src/components/ModalAutoSpin.svelte';
 	import ModalAutoSpinMessage from 'components-ui-html/src/components/ModalAutoSpinMessage.svelte';
 	import ModalBetMenu from 'components-ui-html/src/components/ModalBetMenu.svelte';
-	import ModalBuyBonus from 'components-ui-html/src/components/ModalBuyBonus.svelte';
 	import ModalBuyBonusConfirm from 'components-ui-html/src/components/ModalBuyBonusConfirm.svelte';
 	import ModalError from 'components-ui-html/src/components/ModalError.svelte';
 	import ModalGameRules from 'components-ui-html/src/components/ModalGameRules.svelte';
 	import ModalSettings from 'components-ui-html/src/components/ModalSettings.svelte';
 
+	import StarpetalModalBuyBonus from './StarpetalModalBuyBonus.svelte';
 	import PayTableContent from './PayTableContent.svelte';
 	import GameRulesContent from './GameRulesContent.svelte';
 
-	// Starpetal modal set: the engine's neutral modal chrome, but the paytable and
-	// game-rules content come from the starpetal config (forest symbols + copy).
-	// Buy-bonus uses the base modal for now (themed cards are later polish).
+	// Starpetal modal set: the engine's neutral modal chrome, but the paytable,
+	// game-rules content, and buy-bonus cards come from the starpetal config
+	// (forest symbols + the three themed bonus buys).
 	type Props = { version: Snippet };
 	const props: Props = $props();
 </script>
 
 <ModalError />
 <ModalBetMenu />
-<ModalBuyBonus />
+<StarpetalModalBuyBonus />
 <ModalBuyBonusConfirm />
 <ModalAutoSpin />
 <ModalAutoSpinMessage />

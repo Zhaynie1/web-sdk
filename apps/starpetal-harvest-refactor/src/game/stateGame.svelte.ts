@@ -53,8 +53,26 @@ const board = _.range(BOARD_DIMENSIONS.x).map((reelIndex) => {
 		onSymbolLand,
 	});
 
-	reel.reelState.spinOptions = () =>
-		reel.reelState.spinType === 'fast' ? SPIN_OPTIONS_FAST : SPIN_OPTIONS_DEFAULT;
+	reel.reelState.spinOptions = () => {
+		if (reel.reelState.spinType === 'fast') return SPIN_OPTIONS_FAST;
+		// Scale-aware normal spin: a smaller-rendered board covers fewer pixels per frame,
+		// so the same timing reads as slower. Tighten the pacing (and nudge the fall speed)
+		// as the render scale drops, so the spin feels consistent across device sizes.
+		// ~1080p fullscreen (scale ≈ ref) gets no boost; common 1200x675 / mobile get more.
+		const scale = stateLayoutDerived.mainLayout().scale || 1;
+		const boost = Math.min(Math.max(1.2 / scale, 1), 1.7);
+		const speedBoost = Math.min(boost, 1.25);
+		const d = SPIN_OPTIONS_DEFAULT;
+		return {
+			...d,
+			reelFallInDelay: d.reelFallInDelay / boost,
+			reelFallOutDelay: d.reelFallOutDelay / boost,
+			symbolFallInInterval: d.symbolFallInInterval / boost,
+			symbolFallOutInterval: d.symbolFallOutInterval / boost,
+			symbolFallInSpeed: d.symbolFallInSpeed * speedBoost,
+			symbolFallOutSpeed: d.symbolFallOutSpeed * speedBoost,
+		};
+	};
 
 	return reel;
 });
@@ -88,14 +106,20 @@ export const stateGame = $state({
 	scatterCounter: 0,
 });
 
-const boardLayout = () => ({
-	x: stateLayoutDerived.mainLayout().width * 0.5,
-	// raised above centre so the bottom reel row clears the bottom bar
-	y: stateLayoutDerived.mainLayout().height * 0.45,
-	anchor: { x: 0.5, y: 0.5 },
-	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
-	...BOARD_SIZES,
-});
+const boardLayout = () => {
+	// Raised above centre so the bottom reel row + frame clear the bottom bar. On an
+	// ultra-wide / very short canvas (e.g. an 800×225 popout) the board scales against a
+	// shorter design height than the bar, so raise it a touch more there; normal ratios
+	// keep the tuned 0.45.
+	const yFraction = stateLayoutDerived.canvasRatio() > 2.4 ? 0.4 : 0.45;
+	return {
+		x: stateLayoutDerived.mainLayout().width * 0.5,
+		y: stateLayoutDerived.mainLayout().height * yFraction,
+		anchor: { x: 0.5, y: 0.5 },
+		pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
+		...BOARD_SIZES,
+	};
+};
 
 const boardRaw = () =>
 	board.map((reel) => reel.reelState.symbols.map((reelSymbol) => reelSymbol.rawSymbol));

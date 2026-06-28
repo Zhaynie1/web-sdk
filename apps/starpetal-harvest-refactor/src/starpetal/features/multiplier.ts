@@ -66,7 +66,7 @@ export const boardMultiplierInfo = async (bookEvent: any) => {
 		eventEmitter.broadcast({ type: 'tumbleWinAmountHide' });
 	};
 
-	await withTimeout(runMultiplierCollect(), 12_000, () => {
+	await withTimeout(runMultiplierCollect(), 2_500, () => {
 		eventEmitter.broadcast({ type: 'multiplierBoardReset' });
 		eventEmitter.broadcast({ type: 'multiplierBoardHide' });
 		eventEmitter.broadcast({ type: 'multiplierTotalHide' });

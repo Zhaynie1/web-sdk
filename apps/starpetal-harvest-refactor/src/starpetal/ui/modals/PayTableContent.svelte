@@ -29,10 +29,8 @@
 
 				<div class="symbol-pays">
 					{#each symbol.tiers as tier (tier.label)}
-						<div class="pay-line">
-							<span class="cluster">{tier.label}</span>
-							<span class="amount">{formatPay(tier)}</span>
-						</div>
+						<span class="cluster">{tier.label}</span>
+						<span class="amount">{formatPay(tier)}</span>
 					{/each}
 				</div>
 			</section>
@@ -107,17 +105,11 @@
 	}
 
 	.symbol-pays {
-		display: flex;
-		flex-direction: column;
-		gap: 0.12rem;
-		width: 100%;
-	}
-
-	.pay-line {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.35rem;
+		display: grid;
+		grid-template-columns: auto auto;
+		column-gap: 0.5rem;
+		row-gap: 0.12rem;
+		width: fit-content; /* shrink to content so it centers under the symbol */
 		font-size: 0.78rem;
 		font-weight: 600;
 		line-height: 1.2;
@@ -126,12 +118,13 @@
 	.cluster {
 		color: #efe8ff;
 		white-space: nowrap;
+		text-align: left;
 	}
 
 	.amount {
 		color: #ffffff;
-		text-align: right;
 		white-space: nowrap;
+		text-align: right;
 	}
 
 	.scatter-row {

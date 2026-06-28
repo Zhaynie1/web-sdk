@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Container } from 'pixi-svelte';
-	import { FadeContainer, WinCountUpProvider, ResponsiveBitmapText } from 'components-pixi';
+	import { FadeContainer, WinCountUpProvider } from 'components-pixi';
 	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 	import { CanvasSizeRectangle, MainContainer } from 'components-layout';
@@ -10,6 +10,7 @@
 	import type { WinLevelData } from '$game/winLevelMap';
 	import WinCoins from '$components/WinCoins.svelte';
 	import PressToContinue from '$components/PressToContinue.svelte';
+	import SilverText from './SilverText.svelte';
 	import WinFrameDisplay from './panels/WinFrameDisplay.svelte';
 	import { getWinFrameMetrics } from './panels/winFrameLayout';
 
@@ -49,7 +50,8 @@
 
 				<OnMount
 					onmount={async () => {
-						await startCountUp();
+						// Cap the count-up so a stuck animation can't freeze the win screen.
+						await Promise.race([startCountUp(), waitForTimeout((duration ?? 1000) + 1500)]);
 						await waitForTimeout(300);
 						oncomplete();
 					}}
@@ -58,11 +60,11 @@
 				<MainContainer>
 					<Container eventMode="none" x={board.x} y={board.y}>
 						<WinFrameDisplay title={winLevelData.text} {frameWidth} glow={isBigWin}>
-							<ResponsiveBitmapText
+							<SilverText
 								anchor={0.5}
 								maxWidth={frameMetrics.amountMaxWidth}
+								targetFontSize={frameMetrics.amountFontSize}
 								text={bookEventAmountToCurrencyString(countUpAmount)}
-								style={{ fontFamily: 'silver', fontSize: frameMetrics.amountFontSize, align: 'center' }}
 							/>
 						</WinFrameDisplay>
 					</Container>

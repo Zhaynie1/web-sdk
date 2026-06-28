@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { MainContainer, CanvasSizeRectangle } from 'components-layout';
 	import { FadeContainer } from 'components-pixi';
-	import { Container, Text, BitmapText } from 'pixi-svelte';
-	import { waitForResolve } from 'utils-shared/wait';
+	import { Container, Text } from 'pixi-svelte';
+	import { stateBet } from 'state-shared';
+	import { SECOND } from 'constants-shared/time';
+	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
 
 	import { getContext } from '$game/context';
 	import { THEME } from '$starpetal/config/theme';
+	import { isLocalPlayRoute } from '../localPlay/localDemo';
 	import PressToContinue from '$components/PressToContinue.svelte';
+	import SilverText from './SilverText.svelte';
 	import WinFrameDisplay from './panels/WinFrameDisplay.svelte';
 	import { getWinFrameMetrics, getIntroPanelLayout } from './panels/winFrameLayout';
 
@@ -23,7 +27,14 @@
 		freeSpinIntroHide: () => (show = false),
 		freeSpinIntroUpdate: async (emitterEvent) => {
 			freeSpinsFromEvent = emitterEvent.totalFreeSpins;
-			await waitForResolve((resolve) => (oncomplete = resolve));
+			// In autoplay (and in the offline demo, where a bought bonus is one self-
+			// contained round) nobody presses, so hold briefly then auto-continue. A press
+			// still skips it during real manual play.
+			if (stateBet.autoSpinsCounter > 0 || isLocalPlayRoute()) {
+				await waitForTimeout(SECOND * 1.6);
+			} else {
+				await waitForResolve((resolve) => (oncomplete = resolve));
+			}
 		},
 	});
 
@@ -46,11 +57,12 @@
 				compactBorder
 			>
 				<Container>
-					<BitmapText
+					<SilverText
 						anchor={0.5}
 						y={introLayout.spinCountY}
+						maxWidth={metrics.amountMaxWidth}
+						targetFontSize={metrics.amountFontSize}
 						text={String(freeSpinsFromEvent)}
-						style={{ fontFamily: 'silver', fontSize: metrics.amountFontSize }}
 					/>
 					<Text
 						anchor={0.5}

@@ -20,7 +20,7 @@
 	import { backOut } from 'svelte/easing';
 
 	import { BoardContext } from 'components-shared';
-	import { waitForResolve } from 'utils-shared/wait';
+	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
 
 	import TumbleBoardBase from './TumbleBoardBase.svelte';
 	import BoardContainer from './BoardContainer.svelte';
@@ -82,11 +82,27 @@
 			context.stateGame.tumbleBoardBase = [];
 		},
 		tumbleBoardExplode: async ({ explodingPositions }) => {
+			// Dedupe: a WILD cell belongs to multiple winning clusters, so the same
+			// (reel,row) is listed more than once in explodingSymbols (confirmed in the
+			// books). Without dedup, the duplicate overwrites the first symbol's
+			// `oncomplete` resolver, so that wait never resolves and the explode only
+			// recovers when the outer timeout fires — the freeze-then-resume seen only on
+			// wild clusters. The `complete`-cap is extra insurance against a dropped pop.
+			const seen = new Set<string>();
+			const uniquePositions = explodingPositions.filter((position) => {
+				const key = `${position.reel}:${position.row}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
 			const getPromises = () =>
-				explodingPositions.map(async (position) => {
+				uniquePositions.map(async (position) => {
 					const tumbleSymbol = context.stateGame.tumbleBoardBase[position.reel][position.row];
 					tumbleSymbol.symbolState = 'explosion';
-					await waitForResolve((resolve) => (tumbleSymbol.oncomplete = resolve));
+					await Promise.race([
+						waitForResolve((resolve) => (tumbleSymbol.oncomplete = resolve)),
+						waitForTimeout(600),
+					]);
 				});
 
 			await Promise.all(getPromises());
