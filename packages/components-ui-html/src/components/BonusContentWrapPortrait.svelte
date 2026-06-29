@@ -21,7 +21,7 @@
 	let contentRect = $state({ width: 0, height: 0, left: 0, top: 0 } as ContentRect);
 
 	const horizontalScale = $derived(
-		stateLayoutDerived.canvasSizes().width / (240 * (props.maxListLength || 1)),
+		stateLayoutDerived.canvasSizes().width / (270 * (props.maxListLength || 1)),
 	); // {maxListLength} columns, 240 is the width benchmark
 	const verticalScale = $derived(
 		(stateLayoutDerived.canvasSizes().height - 250) / (contentRect?.height || 0),
@@ -34,7 +34,7 @@
 	<div class="wrap" class:scaled>
 		<div
 			class="bonuses"
-			style="transform: scale({Math.min(scale, 1)});"
+			style="transform: scale({Math.min(scale, 1.6)});"
 			use:resizeObserver={(value) => (contentRect = value)}
 		>
 			<BaseScrollable type="row" noScroll>

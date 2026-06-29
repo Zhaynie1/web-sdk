@@ -26,11 +26,11 @@
 	{#snippet option({ option })}
 		<BaseIcon
 			width="100%"
-			height="2rem"
+			height="2.8rem"
 			border={option === stateUi.autoSpinsText ? '2px white solid' : '2px black solid'}
 		/>
 		<BaseButtonContent>
-			<span style="font-size: 1rem;" class:infinity={option === '∞'} data-test="round-options">
+			<span style="font-size: 1.35rem;" class:infinity={option === '∞'} data-test="round-options">
 				{option}
 			</span>
 		</BaseButtonContent>
@@ -39,7 +39,7 @@
 
 <style lang="scss">
 	.infinity {
-		font-size: 1.5rem;
+		font-size: 2rem;
 		line-height: 1rem;
 		margin-top: 0.3rem;
 	}

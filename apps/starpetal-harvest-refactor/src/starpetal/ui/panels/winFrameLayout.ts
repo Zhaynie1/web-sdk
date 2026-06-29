@@ -8,7 +8,7 @@ export const getWinFrameMetrics = (frameWidth: number, layout: WinFrameLayout = 
 
 	const titleScale = layout === 'compact' ? 0.088 : layout === 'intro' ? 0.095 : 0.12;
 	const subtitleScale = layout === 'compact' ? 0.042 : layout === 'intro' ? 0.055 : 0.052;
-	const amountScale = layout === 'compact' ? 0.15 : layout === 'intro' ? 0.12 : 0.1;
+	const amountScale = layout === 'compact' ? 0.15 : layout === 'intro' ? 0.12 : 0.115;
 	const labelScale = layout === 'compact' ? 0.11 : layout === 'intro' ? 0.085 : 0.05;
 
 	return {
@@ -18,7 +18,7 @@ export const getWinFrameMetrics = (frameWidth: number, layout: WinFrameLayout = 
 		subtitleFontSize: frameHeight * subtitleScale,
 		amountFontSize: frameHeight * amountScale,
 		labelFontSize: frameHeight * labelScale,
-		amountMaxWidth: frameWidth * (layout === 'compact' ? 0.78 : 0.52),
+		amountMaxWidth: frameWidth * (layout === 'compact' ? 0.78 : 0.58),
 	};
 };
 

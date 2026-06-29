@@ -29,7 +29,7 @@
 
 <BaseContent maxWidth="100%">
 	<div class="bonuses-wrap" use:resizeObserver={(value) => (contentRect = value)}>
-		<div class="bonuses" style="transform: scale({Math.min(scale, 1)});">
+		<div class="bonuses" style="transform: scale({Math.min(scale, 1.6)});">
 			<BaseScrollable type="row" noScroll>
 				{@render props.bonusCardsActivate()}
 			</BaseScrollable>

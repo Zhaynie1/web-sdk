@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { recordBookEvent, checkIsMultipleRevealEvents, type BookEventHandlerMap } from 'utils-book';
 import { stateBet } from 'state-shared';
 import { waitForTimeout } from 'utils-shared/wait';
+import { bookEventAmountToBetAmountMultiplier } from 'utils-shared/amount';
 
 import * as starpetal from '$starpetal/bridge';
 import { bookEventHandlers as starpetalBookEventHandlers } from '$starpetal/features';
@@ -20,6 +21,18 @@ import type { Position } from './types';
 const ANIM_TIMEOUT_MS = 2500;
 const withTimeout = <T>(p: Promise<T>, ms = ANIM_TIMEOUT_MS) =>
 	Promise.race([p, waitForTimeout(ms)]);
+
+// Win-screen tier chosen from the win's multiple of the bet (DISPLAY ONLY — payouts and
+// RTP still come from the book unchanged; this only picks which celebration shows):
+//   ≥ 100x → top-tier screen (EPIC), 50–99x → BIG WIN, ≥ 15x → NICE WIN, below 15x → none.
+const WIN_TIER_TOP: WinLevel = 9; // EPIC WIN!
+const winLevelFromBetMultiple = (bookEventAmount: number): WinLevel | null => {
+	const multiple = bookEventAmountToBetAmountMultiplier(bookEventAmount);
+	if (multiple >= 100) return WIN_TIER_TOP;
+	if (multiple >= 50) return 6; // BIG WIN
+	if (multiple >= 15) return 4; // NICE WIN
+	return null;
+};
 
 const winLevelSoundsPlay = ({ winLevelData }: { winLevelData: WinLevelData }) => {
 	if (winLevelData?.alias === 'max') eventEmitter.broadcastAsync({ type: 'uiHide' });
@@ -230,7 +243,9 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		});
 	},
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
-		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
+		// Bonus total uses the same bet-multiple tiers, but the outro always shows (floor
+		// at NICE so a small bonus still gets a closing screen).
+		const winLevelData = winLevelMap[winLevelFromBetMultiple(bookEvent.amount) ?? 4];
 
 		await eventEmitter.broadcastAsync({ type: 'uiHide' });
 		stateGame.gameType = 'basegame';
@@ -277,11 +292,11 @@ const baseBookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> 
 		eventEmitter.broadcast({ type: 'boardShow' });
 	},
 	setWin: async (bookEvent: BookEventOfType<'setWin'>) => {
-		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
-
-		// Only pop the win screen for "nice" wins (level 4) and above; smaller wins
-		// just settle into the balance without a celebration screen.
-		if (winLevelData.level < winLevelMap[4].level) return;
+		// Tier by multiple of the bet: ≥15x NICE, 50–99x BIG, ≥100x top. Below 15x there's
+		// no celebration screen — the win just settles into the balance.
+		const level = winLevelFromBetMultiple(bookEvent.amount);
+		if (level === null) return;
+		const winLevelData = winLevelMap[level];
 
 		eventEmitter.broadcast({ type: 'winShow' });
 		winLevelSoundsPlay({ winLevelData });

@@ -64,9 +64,9 @@
 						stateBet.betAmount <= 0 ||
 						stateBet.balanceAmount < stateBet.betAmount * betModeData.costMultiplier}
 				>
-					<BaseIcon width="100%" height="2rem" border="2px solid white;" />
+					<BaseIcon width="100%" height="2.4rem" border="2px solid white;" />
 					<BaseButtonContent>
-						<span style="font-size: 1rem;">{betModeData.text.button}</span>
+						<span style="font-size: 1.2rem;">{betModeData.text.button}</span>
 					</BaseButtonContent>
 				</Button>
 			{/snippet}
@@ -76,16 +76,16 @@
 
 <style lang="scss">
 	.title {
-		font-size: 0.9rem;
-		line-height: 1.15rem;
+		font-size: 1.15rem;
+		line-height: 1.4rem;
 		text-align: center;
 	}
 
 	.description {
-		font-size: 0.78rem;
-		line-height: 1.1rem;
+		font-size: 0.95rem;
+		line-height: 1.3rem;
 		text-align: center;
-		min-height: 4.5rem;
+		min-height: 3.2rem;
 		white-space: pre-line;
 		display: flex;
 		align-items: center;
@@ -98,14 +98,14 @@
 	}
 
 	.price {
-		font-size: 1rem;
-		line-height: 1rem;
+		font-size: 1.3rem;
+		line-height: 1.3rem;
 		text-align: center;
 		white-space: nowrap;
 	}
 
 	:global(.bonus-card-wrap) {
-		min-width: 168px;
-		max-width: 210px;
+		min-width: 200px;
+		max-width: 270px;
 	}
 </style>
